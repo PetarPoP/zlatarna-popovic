@@ -93,10 +93,10 @@ export function SnapShowcase() {
           ref={(node) => {
             itemRefs.current[index] = node;
           }}
-          className="min-h-screen"
+          className="py-16 md:py-24"
         >
           <div
-            className={`mx-auto grid min-h-screen max-w-6xl items-center gap-10 px-4 md:grid-cols-2 ${
+            className={`mx-auto grid max-w-6xl items-center gap-10 px-4 md:grid-cols-2 ${
               index % 2 === 1 ? "md:[&>div:first-child]:order-2" : ""
             }`}
           >
@@ -135,24 +135,69 @@ export function SnapShowcase() {
             </div>
           </div>
           {index < items.length - 1 && (
-            <div className="pointer-events-none mx-auto hidden max-w-6xl md:block">
-              <motion.svg
-                viewBox="10 10 1000 200"
-                className="h-40 w-full"
-                preserveAspectRatio="none"
-              >
-                <motion.path
-                  d="M900 30 L900 110 L120 110 L120 200"
-                  fill="none"
-                  stroke="rgba(24,24,27,0.55)"
-                  strokeWidth="6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  initial={{ pathLength: 0 }}
-                  animate={{ pathLength: lineVisible[index + 1] ? 1 : 0 }}
-                  transition={{ duration: 0.8, ease: "easeOut" }}
-                />
-              </motion.svg>
+            <div className="pointer-events-none mx-auto hidden max-w-6xl px-4 md:block -mb-36">
+              <div className="relative">
+                <motion.svg
+                  viewBox="0 0 1000 100"
+                  className="h-20 w-full"
+                  preserveAspectRatio="xMidYMid meet"
+                >
+                  <defs>
+                    <linearGradient id="lineGradient" x1="100%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stopColor="rgba(161, 136, 107, 0.6)" />
+                      <stop offset="50%" stopColor="rgba(120, 100, 80, 0.4)" />
+                      <stop offset="100%" stopColor="rgba(161, 136, 107, 0.6)" />
+                    </linearGradient>
+                    <filter id="glow">
+                      <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+                      <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                      </feMerge>
+                    </filter>
+                  </defs>
+                  <motion.path
+                    d="M850 15 C850 40, 850 40, 800 50 L200 50 C150 50, 150 50, 150 85"
+                    fill="none"
+                    stroke="url(#lineGradient)"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    filter="url(#glow)"
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    animate={{ 
+                      pathLength: lineVisible[index + 1] ? 1 : 0,
+                      opacity: lineVisible[index + 1] ? 1 : 0
+                    }}
+                    transition={{ duration: 1, ease: "easeInOut" }}
+                  />
+                  <motion.g
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ 
+                      opacity: lineVisible[index + 1] ? 1 : 0,
+                      scale: lineVisible[index + 1] ? 1 : 0
+                    }}
+                    transition={{ duration: 0.4, delay: 0.1 }}
+                  >
+                    <path
+                      d="M850 9 L856 15 L850 21 L844 15 Z"
+                      fill="rgba(161, 136, 107, 0.5)"
+                    />
+                  </motion.g>
+                  <motion.g
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ 
+                      opacity: lineVisible[index + 1] ? 1 : 0,
+                      scale: lineVisible[index + 1] ? 1 : 0
+                    }}
+                    transition={{ duration: 0.4, delay: 0.8 }}
+                  >
+                    <path
+                      d="M150 85 L156 91 L150 97 L144 91 Z"
+                      fill="rgba(161, 136, 107, 0.5)"
+                    />
+                  </motion.g>
+                </motion.svg>
+              </div>
             </div>
           )}
         </div>
