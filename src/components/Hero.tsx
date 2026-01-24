@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, useScroll, useTransform } from "motion/react";
+import Image from "next/image";
 import { useRef } from "react";
 import { useLanguage } from "@/lib/language-context";
 
@@ -18,10 +19,14 @@ export function Hero() {
   return (
     <div ref={ref} className="relative h-screen overflow-hidden bg-black">
       <motion.div style={{ y, scale: 1.05 }} className="absolute inset-0">
-        <img
-          src="https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBqZXdlbHJ5JTIwZGlhbW9uZHxlbnwxfHx8fDE3Njg5MDU1ODV8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
+        <Image
+          src="https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920"
           alt="Luxury jewelry"
-          className="h-full w-full object-cover"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
+          quality={85}
         />
         <div className="absolute inset-0 bg-black/40" />
       </motion.div>

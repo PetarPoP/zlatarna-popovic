@@ -7,11 +7,13 @@ import "./globals.css";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -29,18 +31,13 @@ export default function RootLayout({
   return (
     <html lang="hr" className="scroll-smooth">
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if (history.scrollRestoration) {
-                history.scrollRestoration = 'manual';
-              }
-              if (!window.location.hash) {
-                window.scrollTo(0, 0);
-              }
-            `,
-          }}
-        />
+        {/* Preconnect to external domains for faster resource loading */}
+        <link rel="preconnect" href="https://images.unsplash.com" />
+        <link rel="dns-prefetch" href="https://images.unsplash.com" />
+        <link rel="preconnect" href="https://www.google.com" />
+        <link rel="dns-prefetch" href="https://www.google.com" />
+        <link rel="preconnect" href="https://maps.googleapis.com" />
+        <link rel="dns-prefetch" href="https://maps.googleapis.com" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
@@ -58,6 +55,19 @@ export default function RootLayout({
             }}
           />
         </LanguageProvider>
+        {/* Deferred scroll restoration - runs after page load */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (history.scrollRestoration) {
+                history.scrollRestoration = 'manual';
+              }
+              if (!window.location.hash) {
+                window.scrollTo(0, 0);
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 
 type LazyImageProps = {
   src: string;
@@ -58,13 +59,16 @@ export function LazyImage({
 
       {/* Actual image - only rendered when in view */}
       {isInView && (
-        <img
+        <Image
           src={src}
           alt={alt}
+          fill
+          sizes="(max-width: 768px) 100vw, 50vw"
           className={`transition-opacity duration-500 ${
             isLoaded ? "opacity-100" : "opacity-0"
           } ${className}`}
           onLoad={() => setIsLoaded(true)}
+          quality={80}
         />
       )}
     </div>

@@ -26,6 +26,51 @@ import { MessageSquare, CalendarDays, CalendarIcon, MapPin, Phone, Mail, Clock }
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/language-context";
 
+// Lazy loaded Google Maps component
+function LazyGoogleMap() {
+  const [isVisible, setIsVisible] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={containerRef} className="aspect-video w-full overflow-hidden border border-zinc-200">
+      {isVisible ? (
+        <iframe
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2879.8889!2d17.0069!3d43.8269!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x475f9a8c8e8e8e8e%3A0x0!2sKneza%20Mutimira%2027%2C%20Livno!5e0!3m2!1shr!2sba!4v1700000000000!5m2!1shr!2sba"
+          width="100%"
+          height="100%"
+          style={{ border: 0 }}
+          allowFullScreen
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          title="Lokacija Zlatarne Popović"
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center bg-zinc-100">
+          <MapPin className="h-8 w-8 text-zinc-400" />
+        </div>
+      )}
+    </div>
+  );
+}
+
 declare global {
   interface Window {
     turnstile?: {
@@ -658,20 +703,9 @@ export function Contact() {
               </div>
             </div>
 
-            {/* Google Maps */}
+            {/* Google Maps - Lazy loaded */}
             <div className="mt-8">
-              <div className="aspect-video w-full overflow-hidden border border-zinc-200">
-                <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2879.8889!2d17.0069!3d43.8269!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x475f9a8c8e8e8e8e%3A0x0!2sKneza%20Mutimira%2027%2C%20Livno!5e0!3m2!1shr!2sba!4v1700000000000!5m2!1shr!2sba"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title="Lokacija Zlatarne Popović"
-                />
-              </div>
+              <LazyGoogleMap />
             </div>
           </div>
 
