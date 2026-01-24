@@ -4,7 +4,7 @@ import { motion, useScroll, useTransform, useMotionValueEvent } from "motion/rea
 import { Menu, X, Globe } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/language-context";
 import { Button } from "@/components/ui/button";
 
@@ -27,6 +27,7 @@ export function Navigation({ variant = "default" }: NavigationProps) {
   const hasInitialized = useRef(false);
   const { scrollY } = useScroll();
   const pathname = usePathname();
+  const router = useRouter();
   const { language, setLanguage, t } = useLanguage();
   
   const isHomePage = pathname === "/";
@@ -106,6 +107,40 @@ export function Navigation({ variant = "default" }: NavigationProps) {
     setIsOpen(false);
   };
 
+  const handleHashNavigation = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault();
+    
+    if (isHomePage) {
+      // On home page, just scroll to element
+      const targetId = href.replace("#", "");
+      const element = document.getElementById(targetId);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+    } else {
+      // On other pages, navigate to home then scroll
+      const targetId = href.replace("/#", "");
+      router.push("/");
+      
+      // Wait for navigation and page load, then scroll to element
+      const scrollToElement = () => {
+        const element = document.getElementById(targetId);
+        if (element) {
+          // Small delay to ensure page is fully rendered
+          setTimeout(() => {
+            element.scrollIntoView({ behavior: "smooth" });
+          }, 100);
+        } else {
+          // Element not found yet, retry
+          setTimeout(scrollToElement, 50);
+        }
+      };
+      
+      // Start checking after navigation begins
+      setTimeout(scrollToElement, 100);
+    }
+  };
+
   return (
     <motion.nav
       style={{ backgroundColor }}
@@ -147,7 +182,7 @@ export function Navigation({ variant = "default" }: NavigationProps) {
                     {item.label}
                   </Link>
                 </motion.div>
-              ) : (
+              )               : (
                 <motion.div
                   key={item.label}
                   initial={{ opacity: 0 }}
@@ -156,16 +191,7 @@ export function Navigation({ variant = "default" }: NavigationProps) {
                 >
                   <a
                     href={item.href}
-                    onClick={(e) => {
-                      if (isHomePage) {
-                        e.preventDefault();
-                        const targetId = item.href.replace("#", "");
-                        const element = document.getElementById(targetId);
-                        if (element) {
-                          element.scrollIntoView({ behavior: "smooth" });
-                        }
-                      }
-                    }}
+                    onClick={(e) => handleHashNavigation(e, item.href)}
                     className={`tracking-wider transition-colors cursor-pointer ${textColor} ${textHoverColor}`}
                   >
                     {item.label}
@@ -228,15 +254,8 @@ export function Navigation({ variant = "default" }: NavigationProps) {
                   key={item.label}
                   href={item.href}
                   onClick={(e) => {
-                    if (isHomePage) {
-                      e.preventDefault();
-                      handleNavClick();
-                      const targetId = item.href.replace("#", "");
-                      const element = document.getElementById(targetId);
-                      if (element) {
-                        element.scrollIntoView({ behavior: "smooth" });
-                      }
-                    }
+                    handleNavClick();
+                    handleHashNavigation(e, item.href);
                   }}
                   className={`block tracking-wider transition-colors cursor-pointer ${textColor} ${textHoverColor}`}
                 >
