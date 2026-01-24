@@ -1,14 +1,17 @@
 "use client";
 
 import { motion, useScroll, useTransform, useMotionValueEvent } from "motion/react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Globe } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useLanguage } from "@/lib/language-context";
+import { Button } from "@/components/ui/button";
 
 type NavItem = {
   label: string;
   href: string;
-  isExternal?: boolean;
+  isPage?: boolean;
 };
 
 type NavigationProps = {
@@ -23,7 +26,10 @@ export function Navigation({ variant = "default" }: NavigationProps) {
   const deltaBuffer = useRef(0);
   const hasInitialized = useRef(false);
   const { scrollY } = useScroll();
+  const pathname = usePathname();
+  const { language, setLanguage, t } = useLanguage();
   
+  const isHomePage = pathname === "/";
   const isLight = variant === "light";
   
   const backgroundColor = useTransform(
@@ -35,11 +41,15 @@ export function Navigation({ variant = "default" }: NavigationProps) {
   );
 
   const navItems: NavItem[] = [
-    { label: "Kolekcije", href: "#collections" },
-    { label: "O nama", href: "#about" },
-    { label: "Galerija", href: "/gallery", isExternal: true },
-    { label: "Kontakt", href: "#contact" },
+    { label: t.nav.about, href: isHomePage ? "#about" : "/#about" },
+    { label: t.nav.collections, href: isHomePage ? "#collections" : "/#collections" },
+    { label: t.nav.gallery, href: "/gallery", isPage: true },
+    { label: t.nav.contact, href: isHomePage ? "#contact" : "/#contact" },
   ];
+
+  const toggleLanguage = () => {
+    setLanguage(language === "hr" ? "en" : "hr");
+  };
 
   useMotionValueEvent(scrollY, "change", (latest: number) => {
     if (!hasInitialized.current) {
@@ -79,7 +89,6 @@ export function Navigation({ variant = "default" }: NavigationProps) {
     lastScrollY.current = latest;
   });
   
-  // Text colors based on variant and scroll state
   const textColor = isLight 
     ? "text-zinc-900" 
     : "text-white";
@@ -92,6 +101,10 @@ export function Navigation({ variant = "default" }: NavigationProps) {
       setHidden(false);
     }
   }, [isOpen]);
+
+  const handleNavClick = () => {
+    setIsOpen(false);
+  };
 
   return (
     <motion.nav
@@ -111,14 +124,14 @@ export function Navigation({ variant = "default" }: NavigationProps) {
               href="/"
               className={`text-2xl tracking-widest transition-colors ${textColor} ${textHoverColor}`}
             >
-              ÉLÉGANCE
+              ZLATARNA POPOVIĆ
             </Link>
           </motion.div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex gap-12">
+          <div className="hidden md:flex items-center gap-12">
             {navItems.map((item) =>
-              item.isExternal ? (
+              item.isPage ? (
                 <motion.div
                   key={item.label}
                   initial={{ opacity: 0 }}
@@ -127,33 +140,67 @@ export function Navigation({ variant = "default" }: NavigationProps) {
                 >
                   <Link
                     href={item.href}
-                    className={`tracking-wider transition-colors ${textColor} ${textHoverColor}`}
+                    className={`tracking-wider transition-colors ${textColor} ${textHoverColor} ${
+                      pathname === item.href ? "underline underline-offset-4" : ""
+                    }`}
                   >
                     {item.label}
                   </Link>
                 </motion.div>
               ) : (
-                <motion.a
+                <motion.div
                   key={item.label}
-                  href={item.href}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 1 }}
-                  className={`tracking-wider transition-colors ${textColor} ${textHoverColor}`}
                 >
-                  {item.label}
-                </motion.a>
+                  <a
+                    href={item.href}
+                    onClick={(e) => {
+                      if (isHomePage) {
+                        e.preventDefault();
+                        const targetId = item.href.replace("#", "");
+                        const element = document.getElementById(targetId);
+                        if (element) {
+                          element.scrollIntoView({ behavior: "smooth" });
+                        }
+                      }
+                    }}
+                    className={`tracking-wider transition-colors cursor-pointer ${textColor} ${textHoverColor}`}
+                  >
+                    {item.label}
+                  </a>
+                </motion.div>
               )
             )}
+            
+            {/* Language Switch */}
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1 }}
+              onClick={toggleLanguage}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
+                isLight
+                  ? "border-zinc-300 hover:border-zinc-400 hover:bg-zinc-100"
+                  : "border-white/30 hover:border-white/50 hover:bg-white/10"
+              } ${textColor}`}
+              aria-label="Toggle language"
+            >
+              <Globe className="h-4 w-4" />
+              <span className="text-sm font-medium uppercase">{language}</span>
+            </motion.button>
           </div>
 
           {/* Mobile Menu Button */}
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setIsOpen(!isOpen)}
-            className={`md:hidden ${textColor}`}
+            className={`md:hidden ${textColor} hover:bg-transparent`}
           >
             {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          </Button>
         </div>
 
         {/* Mobile Navigation */}
@@ -164,13 +211,15 @@ export function Navigation({ variant = "default" }: NavigationProps) {
             exit={{ opacity: 0, height: 0 }}
             className="mt-6 space-y-4 md:hidden"
           >
-            {navItems.map((item) =>
-              item.isExternal ? (
+            {navItems.map((item) => 
+              item.isPage ? (
                 <Link
                   key={item.label}
                   href={item.href}
-                  onClick={() => setIsOpen(false)}
-                  className={`block tracking-wider transition-colors ${textColor} ${textHoverColor}`}
+                  onClick={handleNavClick}
+                  className={`block tracking-wider transition-colors ${textColor} ${textHoverColor} ${
+                    pathname === item.href ? "underline underline-offset-4" : ""
+                  }`}
                 >
                   {item.label}
                 </Link>
@@ -178,13 +227,33 @@ export function Navigation({ variant = "default" }: NavigationProps) {
                 <a
                   key={item.label}
                   href={item.href}
-                  onClick={() => setIsOpen(false)}
-                  className={`block tracking-wider transition-colors ${textColor} ${textHoverColor}`}
+                  onClick={(e) => {
+                    if (isHomePage) {
+                      e.preventDefault();
+                      handleNavClick();
+                      const targetId = item.href.replace("#", "");
+                      const element = document.getElementById(targetId);
+                      if (element) {
+                        element.scrollIntoView({ behavior: "smooth" });
+                      }
+                    }
+                  }}
+                  className={`block tracking-wider transition-colors cursor-pointer ${textColor} ${textHoverColor}`}
                 >
                   {item.label}
                 </a>
               )
             )}
+            
+            {/* Mobile Language Switch */}
+            <Button
+              variant="ghost"
+              onClick={toggleLanguage}
+              className={`flex items-center gap-2 px-0 tracking-wider ${textColor} ${textHoverColor} hover:bg-transparent`}
+            >
+              <Globe className="h-4 w-4" />
+              <span>{language === "hr" ? "English" : "Hrvatski"}</span>
+            </Button>
           </motion.div>
         )}
       </div>

@@ -2,9 +2,11 @@
 
 import { motion, useScroll, useTransform } from "motion/react";
 import { useRef } from "react";
+import { useLanguage } from "@/lib/language-context";
 
 export function Hero() {
   const ref = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start start", "end start"],
@@ -34,7 +36,7 @@ export function Hero() {
           transition={{ duration: 1, delay: 0.2 }}
           className="mb-6 text-6xl tracking-wider md:text-8xl"
         >
-          POPOVIĆ
+          ZLATARNA POPOVIĆ
         </motion.h1>
         <motion.p
           initial={{ opacity: 0, y: 30 }}
@@ -42,16 +44,17 @@ export function Hero() {
           transition={{ duration: 1, delay: 0.4 }}
           className="mb-8 max-w-2xl text-center text-xl tracking-wide md:text-2xl"
         >
-          Vrhunski nakit s vrhunskom kvalitetom.
+          {t.hero.description}
         </motion.p>
-        <motion.button
+        <motion.a
+          href="#collections"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.6 }}
-          className="border-2 border-white px-8 py-3 tracking-widest transition-colors duration-300 hover:bg-white hover:text-black"
+          className="rounded-lg border-2 border-white px-8 py-3 tracking-widest transition-colors duration-300 hover:bg-white hover:text-black"
         >
-          PREGLED NAKITA
-        </motion.button>
+          {t.hero.cta}
+        </motion.a>
       </motion.div>
     </div>
   );

@@ -1,21 +1,17 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { X, MessageCircle, Send, Loader2, ChevronUp } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, ArrowRight, MessageCircle, Send, Loader2, ChevronUp } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import type { GalleryItem } from "@/data/gallery";
 import { useLanguage } from "@/lib/language-context";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
-type GalleryModalProps = {
+type GalleryItemContentProps = {
   item: GalleryItem;
+  prevItem: GalleryItem | null;
+  nextItem: GalleryItem | null;
 };
 
 type FormData = {
@@ -27,8 +23,7 @@ type FormData = {
 
 type FormStatus = "idle" | "loading" | "success" | "error";
 
-export function GalleryModal({ item }: GalleryModalProps) {
-  const router = useRouter();
+export function GalleryItemContent({ item, prevItem, nextItem }: GalleryItemContentProps) {
   const { t } = useLanguage();
   const [isExpanded, setIsExpanded] = useState(false);
   const [formStatus, setFormStatus] = useState<FormStatus>("idle");
@@ -40,21 +35,14 @@ export function GalleryModal({ item }: GalleryModalProps) {
     message: "",
   });
 
-  // Check if required fields are filled (phone is optional)
-  const isFormValid = formData.name.trim() !== "" && 
-                      formData.email.trim() !== "" && 
-                      formData.message.trim() !== "";
-
   // Helper to translate category names
   const translateCategory = (category: string): string => {
     return (t.categories as Record<string, string>)[category] || category;
   };
 
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      router.back();
-    }
-  };
+  const isFormValid = formData.name.trim() !== "" && 
+                      formData.email.trim() !== "" && 
+                      formData.message.trim() !== "";
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -96,63 +84,51 @@ export function GalleryModal({ item }: GalleryModalProps) {
   };
 
   return (
-    <Dialog defaultOpen onOpenChange={handleOpenChange}>
-      <DialogContent
-        showCloseButton={false}
-        className="max-h-[95vh] w-[95vw] max-w-6xl overflow-y-auto border-none bg-white p-0 shadow-2xl sm:rounded-lg [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+    <div className="mx-auto max-w-6xl px-4">
+      <Link
+        href="/gallery"
+        className="mb-8 inline-flex items-center gap-2 text-sm text-zinc-600 transition-colors hover:text-zinc-900"
       >
-        {/* Close button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.back()}
-          className="absolute right-3 top-3 z-10 h-9 w-9 rounded-full bg-black/60 text-white backdrop-blur-sm transition-all hover:bg-black hover:text-white hover:scale-110"
-          aria-label={t.modal.close}
-        >
-          <X className="h-4 w-4" />
-        </Button>
+        <ArrowLeft className="h-4 w-4" />
+        {t.gallery.view === "Pogledaj" ? "Natrag na galeriju" : "Back to gallery"}
+      </Link>
 
-        {/* Image on top */}
-        <div className="relative w-full bg-zinc-100">
+      <div className="grid gap-12 md:grid-cols-2">
+        <div className="relative aspect-square overflow-hidden bg-zinc-100">
           <img
             src={item.image}
             alt={item.title}
-            className="h-auto max-h-[60vh] w-full object-contain"
+            className="h-full w-full object-cover"
           />
         </div>
 
-        {/* Content below */}
-        <div className="p-6">
-          <span className="mb-2 inline-block text-xs uppercase tracking-[0.2em] text-zinc-500">
+        <div className="flex flex-col justify-center">
+          <p className="mb-2 text-xs uppercase tracking-[0.3em] text-zinc-500">
             {translateCategory(item.category)}
-          </span>
-          <DialogTitle className="mb-3 text-xl font-normal tracking-[0.1em] text-zinc-900 sm:text-2xl">
+          </p>
+          <h1 className="mb-6 text-3xl tracking-[0.15em] sm:text-4xl">
             {item.title}
-          </DialogTitle>
-          <DialogDescription className="text-sm leading-relaxed text-zinc-600 sm:text-base">
-            {item.description}
-          </DialogDescription>
+          </h1>
+          <p className="mb-8 leading-7 text-zinc-600">{item.description}</p>
 
-          {/* Inquiry toggle button */}
           <Button
-            variant="outline"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="mt-6 w-full cursor-pointer rounded-lg border-zinc-200 bg-zinc-50 px-4 py-6 text-sm font-medium tracking-wide text-zinc-700 transition-all hover:bg-zinc-100 hover:border-zinc-300"
+            className="w-full rounded-lg bg-black px-8 py-6 text-xs uppercase tracking-[0.35em] text-white transition-colors hover:bg-zinc-800"
           >
             {isExpanded ? (
               <>
-                <ChevronUp className="h-4 w-4" />
+                <ChevronUp className="mr-2 h-4 w-4" />
                 {t.modal.hideInquiry}
               </>
             ) : (
               <>
-                <MessageCircle className="h-4 w-4" />
+                <MessageCircle className="mr-2 h-4 w-4" />
                 {t.modal.interested}
               </>
             )}
           </Button>
 
-          {/* Expandable inquiry form */}
+          {/* Expandable Form */}
           <AnimatePresence>
             {isExpanded && (
               <motion.div
@@ -162,7 +138,7 @@ export function GalleryModal({ item }: GalleryModalProps) {
                 transition={{ duration: 0.3, ease: "easeInOut" }}
                 className="overflow-hidden"
               >
-                <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                <div className="mt-6 rounded-lg border border-zinc-200 bg-zinc-50 p-5">
                   {formStatus === "success" ? (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
@@ -200,7 +176,7 @@ export function GalleryModal({ item }: GalleryModalProps) {
                             value={formData.name}
                             onChange={handleInputChange}
                             required
-                            className="w-full border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 transition-colors focus:border-zinc-500 focus:outline-none"
+                            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 transition-colors focus:border-zinc-500 focus:outline-none"
                             placeholder={t.contact.namePlaceholder}
                           />
                         </div>
@@ -218,7 +194,7 @@ export function GalleryModal({ item }: GalleryModalProps) {
                             value={formData.email}
                             onChange={handleInputChange}
                             required
-                            className="w-full border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 transition-colors focus:border-zinc-500 focus:outline-none"
+                            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 transition-colors focus:border-zinc-500 focus:outline-none"
                             placeholder={t.contact.emailPlaceholder}
                           />
                         </div>
@@ -237,7 +213,7 @@ export function GalleryModal({ item }: GalleryModalProps) {
                           name="phone"
                           value={formData.phone}
                           onChange={handleInputChange}
-                          className="w-full border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 transition-colors focus:border-zinc-500 focus:outline-none"
+                          className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 transition-colors focus:border-zinc-500 focus:outline-none"
                           placeholder={t.contact.phonePlaceholder}
                         />
                       </div>
@@ -256,7 +232,7 @@ export function GalleryModal({ item }: GalleryModalProps) {
                           onChange={handleInputChange}
                           required
                           rows={3}
-                          className="w-full resize-none border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 transition-colors focus:border-zinc-500 focus:outline-none"
+                          className="w-full resize-none rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 transition-colors focus:border-zinc-500 focus:outline-none"
                           placeholder={t.modal.messagePlaceholder}
                         />
                       </div>
@@ -291,7 +267,38 @@ export function GalleryModal({ item }: GalleryModalProps) {
             )}
           </AnimatePresence>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+
+      <div className="mt-16 flex items-center justify-between border-t border-zinc-200 pt-8">
+        {prevItem ? (
+          <Link
+            href={`/gallery/${prevItem.id}`}
+            className="group flex items-center gap-3 text-sm text-zinc-600 transition-colors hover:text-zinc-900"
+          >
+            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+            <span className="hidden sm:inline">{prevItem.title}</span>
+            <span className="sm:hidden">
+              {t.gallery.view === "Pogledaj" ? "Prethodni" : "Previous"}
+            </span>
+          </Link>
+        ) : (
+          <div />
+        )}
+        {nextItem ? (
+          <Link
+            href={`/gallery/${nextItem.id}`}
+            className="group flex items-center gap-3 text-sm text-zinc-600 transition-colors hover:text-zinc-900"
+          >
+            <span className="hidden sm:inline">{nextItem.title}</span>
+            <span className="sm:hidden">
+              {t.gallery.view === "Pogledaj" ? "Sljedeći" : "Next"}
+            </span>
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+          </Link>
+        ) : (
+          <div />
+        )}
+      </div>
+    </div>
   );
 }

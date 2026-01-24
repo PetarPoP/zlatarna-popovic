@@ -1,55 +1,73 @@
-const collections = [
-  {
-    name: "Diamond Rings",
-    description: "Exquisite diamond rings that symbolize eternal love.",
-    image:
-      "https://images.unsplash.com/photo-1738694242379-ef21044985bb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxnb2xkJTIwcmluZ3MlMjBlbGVnYW50fGVufDF8fHx8MTc2ODk4MTA1Mnww&ixlib=rb-4.1.0&q=80&w=1200",
-  },
-  {
-    name: "Luxury Necklaces",
-    description: "Statement pieces that elevate any ensemble.",
-    image:
-      "https://images.unsplash.com/photo-1767921482419-d2d255b5b700?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBuZWNrbGFjZSUyMGpld2Vscnl8ZW58MXx8fHwxNzY4OTUxODg5fDA&ixlib=rb-4.1.0&q=80&w=1200",
-  },
-  {
-    name: "Designer Earrings",
-    description: "Elegant earrings crafted with precious metals.",
-    image:
-      "https://images.unsplash.com/photo-1629224316810-9d8805b95e76?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxlbGVnYW50JTIwZWFycmluZ3MlMjBnb2xkfGVufDF8fHx8MTc2ODkzNzg0Nnww&ixlib=rb-4.1.0&q=80&w=1200",
-  },
-];
+"use client";
+
+import Link from "next/link";
+import { galleryItems } from "@/data/gallery";
+import { useLanguage } from "@/lib/language-context";
+import { LazyImage } from "@/components/LazyImage";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
+} from "@/components/ui/carousel";
 
 export function Collections() {
+  const { t } = useLanguage();
+  
   return (
-    <section
-      id="collections"
-      className="snap-start bg-zinc-50 py-20"
-    >
+    <section id="collections" className="snap-start bg-zinc-50 py-20">
       <div className="mx-auto max-w-6xl px-4">
         <div className="mb-12 text-center">
           <h2 className="mb-4 text-3xl tracking-[0.2em] sm:text-4xl md:text-5xl">
-            Our Collections
+            {t.gallery.title}
           </h2>
           <p className="mx-auto max-w-2xl text-sm text-zinc-600 sm:text-base">
-            Discover our curated selection of fine jewelry, each piece a
-            masterpiece of craftsmanship.
+            {t.gallery.description}
           </p>
         </div>
-        <div className="grid gap-8 md:grid-cols-3">
-          {collections.map((item) => (
-            <article key={item.name} className="group">
-              <div className="relative mb-5 h-72 overflow-hidden">
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/15" />
-              </div>
-              <h3 className="mb-2 text-xl tracking-wide">{item.name}</h3>
-              <p className="text-sm text-zinc-600">{item.description}</p>
-            </article>
-          ))}
+
+        <Carousel
+          opts={{
+            align: "start",
+            loop: true,
+          }}
+          className="w-full"
+        >
+          <CarouselContent className="-ml-4">
+            {galleryItems.map((item) => (
+              <CarouselItem
+                key={item.id}
+                className="pl-4 basis-full sm:basis-1/2 lg:basis-1/3"
+              >
+                <Link href={`/gallery/${item.id}`} className="group block">
+                  <div className="relative mb-3 h-72 overflow-hidden bg-zinc-100">
+                    <LazyImage
+                      src={item.image}
+                      alt={item.title}
+                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      rootMargin="100px"
+                    />
+                    <div className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/15" />
+                  </div>
+                  <h3 className="text-center text-sm tracking-wide transition-colors group-hover:text-zinc-600">
+                    {item.title}
+                  </h3>
+                </Link>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <CarouselPrevious className="left-0 -translate-x-1/2 border-zinc-300 bg-white hover:bg-zinc-50 sm:-left-4" />
+          <CarouselNext className="right-0 translate-x-1/2 border-zinc-300 bg-white hover:bg-zinc-50 sm:-right-4" />
+        </Carousel>
+
+        <div className="mt-10 text-center">
+          <Link
+            href="/gallery"
+            className="inline-block rounded-lg bg-black px-8 py-3 text-xs uppercase tracking-[0.35em] text-white transition-colors hover:bg-zinc-800"
+          >
+            {t.nav.gallery}
+          </Link>
         </div>
       </div>
     </section>
