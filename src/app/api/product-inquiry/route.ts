@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "Zlatarna Popović <onboarding@resend.dev>";
 
 type ProductInquiryData = {
   name: string;
@@ -41,7 +42,7 @@ export async function POST(request: Request) {
     const contactEmail = process.env.CONTACT_EMAIL || "info@zlatarna-popovic.ba";
     
     await resend.emails.send({
-      from: "Zlatarna Popović <onboarding@resend.dev>",
+      from: FROM_EMAIL,
       to: contactEmail,
       subject: `Upit za proizvod: ${productTitle}`,
       html: `
@@ -128,8 +129,8 @@ export async function POST(request: Request) {
 
     // Send confirmation to user
     await resend.emails.send({
-      from: "Zlatarna Popović <onboarding@resend.dev>",
-      to: email,
+      from: FROM_EMAIL,
+      to: email.trim(),
       subject: `Primili smo vaš upit za ${productTitle} - Zlatarna Popović`,
       html: `
         <!DOCTYPE html>

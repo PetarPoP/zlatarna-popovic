@@ -109,6 +109,11 @@ export function GalleryItemContent({ item, prevItem, nextItem }: GalleryItemCont
           <h1 className="mb-6 text-3xl tracking-[0.15em] sm:text-4xl">
             {item.title}
           </h1>
+          {!item.isAvailable && (
+            <p className="mb-4 text-sm font-medium uppercase tracking-[0.25em] text-zinc-500">
+              Trenutno nedostupno
+            </p>
+          )}
           <p className="mb-8 leading-7 text-zinc-600">{item.description}</p>
 
           <Button

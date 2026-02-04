@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { Search, X } from "lucide-react";
 import type { GalleryItem } from "@/data/gallery";
-import { getGalleryCategories } from "@/data/gallery";
 import { useLanguage } from "@/lib/language-context";
 import { Button } from "@/components/ui/button";
 import { LazyImage } from "@/components/LazyImage";
@@ -16,8 +16,12 @@ type GalleryGridProps = {
 export function GalleryGrid({ items }: GalleryGridProps) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const categories = getGalleryCategories();
   const { t } = useLanguage();
+  
+  // Extract unique categories from items
+  const categories = useMemo(() => {
+    return Array.from(new Set(items.map((item) => item.category)));
+  }, [items]);
 
   // Helper to translate category names
   const translateCategory = (category: string): string => {
@@ -52,6 +56,11 @@ export function GalleryGrid({ items }: GalleryGridProps) {
   };
 
   const hasActiveFilters = selectedCategory !== null || searchQuery.trim() !== "";
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    gridRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [selectedCategory, searchQuery]);
 
   return (
     <div className="flex flex-col gap-8 lg:flex-row">
@@ -144,7 +153,7 @@ export function GalleryGrid({ items }: GalleryGridProps) {
       </aside>
 
       {/* Gallery Grid */}
-      <div className="flex-1">
+      <div ref={gridRef} className="flex-1 scroll-mt-24">
         {/* Results count */}
         <div className="mb-6 flex items-center justify-between">
           <p className="text-sm text-zinc-500">
@@ -163,56 +172,88 @@ export function GalleryGrid({ items }: GalleryGridProps) {
           )}
         </div>
 
-        {filteredItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-zinc-100">
-              <Search className="h-8 w-8 text-zinc-400" />
-            </div>
-            <h3 className="mb-2 text-lg tracking-wide">{t.gallery.noResults}</h3>
-            <p className="mb-4 text-sm text-zinc-500">
-              {t.gallery.noResultsHint}
-            </p>
-            <Button
-              onClick={clearFilters}
-              className="cursor-pointer rounded-lg bg-zinc-900 px-6 py-2 text-xs uppercase tracking-[0.2em] text-white transition-colors hover:bg-zinc-800"
+        <AnimatePresence mode="wait">
+          {filteredItems.length === 0 ? (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="flex flex-col items-center justify-center py-16 text-center"
             >
-              {t.gallery.clearFilters}
-            </Button>
-          </div>
-        ) : (
-          <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-            {filteredItems.map((item) => (
-              <Link
-                key={item.id}
-                href={`/gallery/${item.id}`}
-                className="group relative"
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-zinc-100">
+                <Search className="h-8 w-8 text-zinc-400" />
+              </div>
+              <h3 className="mb-2 text-lg tracking-wide">{t.gallery.noResults}</h3>
+              <p className="mb-4 text-sm text-zinc-500">
+                {t.gallery.noResultsHint}
+              </p>
+              <Button
+                onClick={clearFilters}
+                className="cursor-pointer rounded-lg bg-zinc-900 px-6 py-2 text-xs uppercase tracking-[0.2em] text-white transition-colors hover:bg-zinc-800"
               >
-                <article className="overflow-hidden">
-                  <div className="relative aspect-square overflow-hidden bg-zinc-100">
-                    <LazyImage
-                      src={item.image}
-                      alt={item.title}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      rootMargin="300px"
-                    />
-                    <div className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/20" />
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                      <span className="bg-white/90 px-6 py-3 text-xs uppercase tracking-[0.3em] text-zinc-900">
-                        {t.gallery.view}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <p className="mb-1 text-xs uppercase tracking-[0.2em] text-zinc-500">
-                      {translateCategory(item.category)}
-                    </p>
-                    <h3 className="text-lg tracking-wide">{item.title}</h3>
-                  </div>
-                </article>
-              </Link>
-            ))}
-          </div>
-        )}
+                {t.gallery.clearFilters}
+              </Button>
+            </motion.div>
+          ) : (
+            <motion.div
+              key={`grid-${selectedCategory ?? "all"}-${searchQuery}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3"
+            >
+              {filteredItems.map((item, index) => (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  transition={{
+                    duration: 0.18,
+                    delay: Math.min(index * 0.025, 0.1),
+                    ease: [0.25, 0.46, 0.45, 0.94],
+                  }}
+                >
+                  <Link
+                    href={`/gallery/${item.id}`}
+                    className="group relative block"
+                  >
+                    <article className="overflow-hidden">
+                      <div className="relative aspect-square overflow-hidden bg-zinc-100">
+                        <LazyImage
+                          src={item.image}
+                          alt={item.title}
+                          className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${!item.isAvailable ? "grayscale opacity-60" : ""}`}
+                          rootMargin="300px"
+                        />
+                        <div className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/20" />
+                        {!item.isAvailable && (
+                          <div className="absolute inset-x-0 bottom-0 bg-black/70 py-2 text-center text-xs uppercase tracking-[0.25em] text-zinc-100">
+                            Trenutno nedostupno
+                          </div>
+                        )}
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                          <span className="bg-white/90 px-6 py-3 text-xs uppercase tracking-[0.3em] text-zinc-900">
+                            {t.gallery.view}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="p-4">
+                        <p className="mb-1 text-xs uppercase tracking-[0.2em] text-zinc-500">
+                          {translateCategory(item.category)}
+                        </p>
+                        <h3 className="text-lg tracking-wide">{item.title}</h3>
+                      </div>
+                    </article>
+                  </Link>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

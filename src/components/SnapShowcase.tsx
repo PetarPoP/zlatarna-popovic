@@ -44,6 +44,7 @@ export function SnapShowcase() {
   const { t } = useLanguage();
   
   const items = useMemo(() => itemsData.map(item => ({
+    id: item.titleKey,
     title: t.showcase[item.titleKey],
     description: t.showcase[item.descKey],
     extended: t.showcase[item.extendedKey],
@@ -116,7 +117,7 @@ export function SnapShowcase() {
     <section ref={sectionRef} id="about" className="relative bg-white">
       {items.map((item, index) => (
         <div
-          key={item.title}
+          key={item.id}
           ref={(node) => {
             itemRefs.current[index] = node;
           }}

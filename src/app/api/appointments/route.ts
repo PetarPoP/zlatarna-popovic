@@ -4,6 +4,10 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// Sender: use verified domain (e.g. noreply@zlatarna-popovic.ba) to deliver to customers.
+// With onboarding@resend.dev, Resend only delivers to the email you signed up with.
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "Zlatarna Popović <onboarding@resend.dev>";
+
 type AppointmentFormData = {
   name: string;
   email: string;
@@ -54,34 +58,49 @@ export async function POST(request: Request) {
     //   );
     // }
 
-    // Check if slot is already taken using Prisma
+    const appointmentDate = new Date(date);
+    const appointmentTime = new Date(`1970-01-01T${time}:00`);
+
+    // Check if slot is already taken (any status – unique is on date+time)
     const existingAppointment = await prisma.appointment.findFirst({
       where: {
-        appointmentDate: new Date(date),
-        appointmentTime: new Date(`1970-01-01T${time}:00`),
-        status: { not: "cancelled" },
+        appointmentDate,
+        appointmentTime,
       },
     });
 
     if (existingAppointment) {
-      return NextResponse.json(
-        { success: false, error: "Ovaj termin je već zauzet. Molimo odaberite drugi termin." },
-        { status: 400 }
-      );
+      if (existingAppointment.status !== "cancelled") {
+        return NextResponse.json(
+          { success: false, error: "Ovaj termin je već zauzet. Molimo odaberite drugi termin." },
+          { status: 400 }
+        );
+      }
+      // Rebook cancelled slot: update existing row
+      await prisma.appointment.update({
+        where: { id: existingAppointment.id },
+        data: {
+          name,
+          email,
+          phone,
+          service,
+          notes: notes || null,
+          status: "pending",
+        },
+      });
+    } else {
+      await prisma.appointment.create({
+        data: {
+          name,
+          email,
+          phone,
+          appointmentDate,
+          appointmentTime,
+          service,
+          notes: notes || null,
+        },
+      });
     }
-
-    // Save to database using Prisma
-    await prisma.appointment.create({
-      data: {
-        name,
-        email,
-        phone,
-        appointmentDate: new Date(date),
-        appointmentTime: new Date(`1970-01-01T${time}:00`),
-        service,
-        notes: notes || null,
-      },
-    });
 
     const serviceLabel = serviceLabels[service] || service;
     const formattedDate = new Date(date).toLocaleDateString("hr-HR", {
@@ -93,9 +112,9 @@ export async function POST(request: Request) {
 
     // Send email notification to store
     const contactEmail = process.env.CONTACT_EMAIL || "info@zlatarna-popovic.ba";
-    
+
     await resend.emails.send({
-      from: "Zlatarna Popović <onboarding@resend.dev>",
+      from: FROM_EMAIL,
       to: contactEmail,
       subject: `Nova rezervacija termina - ${name}`,
       html: `
@@ -190,11 +209,13 @@ export async function POST(request: Request) {
       `,
     });
 
-    // Send confirmation to user
-    await resend.emails.send({
-      from: "Zlatarna Popović <onboarding@resend.dev>",
-      to: email,
-      subject: "Potvrda rezervacije - Zlatarna Popović",
+    // Send confirmation to user (requires verified domain – see RESEND_FROM_EMAIL in .env)
+    const customerEmail = String(email).trim().toLowerCase();
+    try {
+      const userEmailResult = await resend.emails.send({
+        from: FROM_EMAIL,
+        to: customerEmail,
+        subject: "Vaš termin je zaprimljen - Zlatarna Popović",
       html: `
         <!DOCTYPE html>
         <html>
@@ -216,14 +237,14 @@ export async function POST(request: Request) {
                   <!-- Success Banner -->
                   <tr>
                     <td style="background-color: #dcfce7; padding: 20px 40px; text-align: center;">
-                      <p style="margin: 0; color: #166534; font-size: 16px; font-weight: 600;">Vaša rezervacija je primljena!</p>
+                      <p style="margin: 0; color: #166534; font-size: 16px; font-weight: 600;">Vaš termin je zaprimljen</p>
                     </td>
                   </tr>
                   <!-- Content -->
                   <tr>
                     <td style="padding: 40px;">
                       <p style="margin: 0 0 24px 0; color: #3f3f46; font-size: 16px; line-height: 1.6;">Poštovani/a <strong>${name}</strong>,</p>
-                      <p style="margin: 0 0 32px 0; color: #3f3f46; font-size: 16px; line-height: 1.6;">Hvala vam na rezervaciji. Kontaktirat ćemo vas telefonom radi potvrde termina.</p>
+                      <p style="margin: 0 0 32px 0; color: #3f3f46; font-size: 16px; line-height: 1.6;">Hvala vam na rezervaciji. Javit ćemo vam se u najkraćem roku radi potvrde termina.</p>
                       
                       <div style="background-color: #fafafa; border-radius: 8px; padding: 24px; margin-bottom: 32px;">
                         <h2 style="margin: 0 0 20px 0; color: #18181b; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px;">Detalji rezervacije</h2>
@@ -278,20 +299,26 @@ export async function POST(request: Request) {
         </body>
         </html>
       `,
-    });
+      });
+      if (!userEmailResult.data?.id) {
+        console.error("Resend user email failed:", userEmailResult.error);
+      }
+    } catch (userEmailError) {
+      console.error("Failed to send confirmation email to customer:", customerEmail, userEmailError);
+    }
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Appointment form error:", error);
-    
-    // Check for unique constraint violation
-    if (error instanceof Error && error.message.includes("unique")) {
+    const isUniqueViolation =
+      (error as { code?: string })?.code === "P2002" ||
+      (error instanceof Error && error.message.includes("unique"));
+    if (isUniqueViolation) {
       return NextResponse.json(
         { success: false, error: "Ovaj termin je već zauzet. Molimo odaberite drugi termin." },
         { status: 400 }
       );
     }
-
     return NextResponse.json(
       { success: false, error: "Došlo je do greške. Molimo pokušajte kasnije." },
       { status: 500 }

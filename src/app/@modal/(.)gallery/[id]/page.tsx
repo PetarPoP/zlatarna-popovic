@@ -7,7 +7,7 @@ type PageProps = {
 
 export default async function GalleryModalPage({ params }: PageProps) {
   const { id } = await params;
-  const item = getGalleryItem(id);
+  const item = await getGalleryItem(id);
 
   if (!item) {
     return null;

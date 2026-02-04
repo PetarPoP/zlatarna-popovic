@@ -13,6 +13,7 @@ model Inquiry {
   email     String   @db.VarChar(255)
   phone     String?  @db.VarChar(50)
   message   String   @db.Text
+  isRead    Boolean  @default(false) @map("is_read")
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("inquiries")
@@ -32,4 +33,18 @@ model Appointment {
 
   @@unique([appointmentDate, appointmentTime])
   @@map("appointments")
+}
+
+model GalleryItem {
+  id          Int      @id @default(autoincrement())
+  title       String   @db.VarChar(255)
+  description String   @db.Text
+  category    String   @db.VarChar(100)
+  image       String   @db.VarChar(500)
+  isAvailable Boolean  @default(true) @map("is_available")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("gallery_items")
 }

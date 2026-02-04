@@ -1,4 +1,4 @@
-import { galleryItems } from "@/data/gallery";
+import { getGalleryItems } from "@/data/gallery";
 import { GalleryGrid } from "@/components/GalleryGrid";
 import { GalleryHeader } from "@/components/GalleryHeader";
 import { Navigation } from "@/components/Navigation";
@@ -9,7 +9,9 @@ export const metadata = {
   description: "Pregledajte našu kolekciju finog nakita i satova.",
 };
 
-export default function GalleryPage() {
+export default async function GalleryPage() {
+  const galleryItems = await getGalleryItems();
+  
   return (
     <div className="min-h-screen bg-white text-zinc-900">
       <Navigation variant="light" />
