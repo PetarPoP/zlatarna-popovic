@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import { hr } from "date-fns/locale";
@@ -19,7 +19,7 @@ type Inquiry = {
   createdAt: string;
 };
 
-export default function InquiriesPage() {
+function InquiriesPageContent() {
   const searchParams = useSearchParams();
   const showUnreadOnly = searchParams.get("unread") === "true";
   
@@ -296,5 +296,19 @@ export default function InquiriesPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function InquiriesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-64 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white border-t-transparent" />
+        </div>
+      }
+    >
+      <InquiriesPageContent />
+    </Suspense>
   );
 }

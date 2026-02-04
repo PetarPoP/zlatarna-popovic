@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import { hr } from "date-fns/locale";
@@ -50,7 +50,7 @@ const serviceLabels: Record<string, string> = {
   appraisal: "Procjena vrijednosti",
 };
 
-export default function AppointmentsPage() {
+function AppointmentsPageContent() {
   const searchParams = useSearchParams();
   const initialStatus = searchParams.get("status") || "all";
   
@@ -304,5 +304,19 @@ export default function AppointmentsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function AppointmentsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-64 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white border-t-transparent" />
+        </div>
+      }
+    >
+      <AppointmentsPageContent />
+    </Suspense>
   );
 }
